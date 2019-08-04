@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.136
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FortniteDownloader", "FortniteDownloader\FortniteDownloader.csproj", "{31EC01EA-4A1A-4D93-BD21-D94AF3D5BC20}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{31EC01EA-4A1A-4D93-BD21-D94AF3D5BC20}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{31EC01EA-4A1A-4D93-BD21-D94AF3D5BC20}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{31EC01EA-4A1A-4D93-BD21-D94AF3D5BC20}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{31EC01EA-4A1A-4D93-BD21-D94AF3D5BC20}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {CB1F5D56-BCD0-489D-89F9-C37D4401B693}
+	EndGlobalSection
+EndGlobal

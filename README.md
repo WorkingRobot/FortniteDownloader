@@ -1,4 +1,5 @@
 # FortniteDownloader
+A [NuGet](https://www.nuget.org/packages/FortniteDownloader) package is available as well if you don't want to download the dll.
 ## Usage
 
 ### Authentication
