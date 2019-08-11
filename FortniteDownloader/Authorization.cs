@@ -23,6 +23,7 @@ namespace FortniteDownloader
         const string LAUNCHER_LOGIN_INIT_URL = "https://launcher-website-prod07.ol.epicgames.com/epic-login";
         const string LAUNCHER_LOGIN_URL = "https://accounts.launcher-website-prod07.ol.epicgames.com/login/doLauncherLogin";
         const string OAUTH_TOKEN_URL = "https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/token";
+        // No game client tokens here, just the launcher :)
         const string LAUNCHER_AUTH_HEADER = "basic MzRhMDJjZjhmNDQxNGUyOWIxNTkyMTg3NmRhMzZmOWE6ZGFhZmJjY2M3Mzc3NDUwMzlkZmZlNTNkOTRmYzc2Y2Y=";
 
         public Authorization(string user, string pass)
@@ -58,20 +59,24 @@ namespace FortniteDownloader
                 { "client_id", launcherInfo.client_id },
                 { "redirectUrl", launcherInfo.redirectUrl },
                 { "epic_username", Username },
-                { "password", Password },
-                { "rememberMe", "YES" }
-            }, true).ConfigureAwait(false);
+                { "password", Password }
+            }).ConfigureAwait(false);
             Client.SetHeader("X-XSRF-TOKEN", null);
+            var loginError = (await resp.GetStringAsync().ConfigureAwait(false)).Split("<div class=\"errorCodes", 2);
+            if (loginError.Length == 2)
+            {
+                throw new ArgumentException(loginError[1].Split("<span>", 2)[1].Split("</span>", 2)[0]);
+            }
 
             resp = await Client.SendAsync("GET", launcherInfo.redirectUrl).ConfigureAwait(false);
-            var code = (await resp.GetStringAsync().ConfigureAwait(false)).Split("loginWithExchangeCode('", 2)[1].Split("',", 2)[0];
+            string exchangeCode = (await resp.GetStringAsync().ConfigureAwait(false)).Split("loginWithExchangeCode('", 2)[1].Split("',", 2)[0];
 
             Client.SetHeader("Authorization", LAUNCHER_AUTH_HEADER);
             resp = await Client.SendFormAsync("POST", OAUTH_TOKEN_URL, new Dictionary<string, string>
             {
                 { "grant_type", "exchange_code" },
                 { "token_type", "eg1" },
-                { "exchange_code", code }
+                { "exchange_code", exchangeCode }
             }).ConfigureAwait(false);
             var tokens = JsonConvert.DeserializeObject<ExchangeResponse>(await resp.GetStringAsync().ConfigureAwait(false));
 
@@ -145,7 +150,7 @@ namespace FortniteDownloader
     // I hate myself for doing this, but .Net Standard doesn't support it
     static class Extensions
     {
-        internal static string[] Split(this string me, string spliterator, int count)
+        internal static string[] Split(this string me, string spliterator, int count = int.MaxValue)
         {
             return me.Split(new string[] { spliterator }, count, StringSplitOptions.None);
         }

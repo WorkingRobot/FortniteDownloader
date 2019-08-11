@@ -24,7 +24,8 @@ namespace FortniteDownloader
             CacheChunks = cachePreviousChunks;
             if (CacheChunks)
                 DownloadedChunks = new byte[Chunks.Length][];
-            Length = Chunks.Sum(c => c.Size);
+            Length = Chunks.Sum(c => (long)c.Size);
+            ChunkCount = Chunks.Length;
             Client = client ?? new Client();
         }
 
@@ -35,6 +36,7 @@ namespace FortniteDownloader
         public override bool CanWrite => false;
 
         public override long Length { get; }
+        public int ChunkCount { get; }
 
         private long position;
         public override long Position {
@@ -115,7 +117,7 @@ namespace FortniteDownloader
             return (-1, -1);
         }
 
-        async Task<byte[]> GetChunk(int i)
+        public async Task<byte[]> GetChunk(int i)
         {
             if (CacheChunks && DownloadedChunks[i] != null)
                 return DownloadedChunks[i];

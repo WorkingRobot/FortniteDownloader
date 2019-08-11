@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.28307.136
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FortniteDownloader", "FortniteDownloader\FortniteDownloader.csproj", "{31EC01EA-4A1A-4D93-BD21-D94AF3D5BC20}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DownloaderApp", "DownloaderApp\DownloaderApp.csproj", "{1A3BD7A6-0D96-4B05-8A9F-000FF44A25D8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{31EC01EA-4A1A-4D93-BD21-D94AF3D5BC20}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{31EC01EA-4A1A-4D93-BD21-D94AF3D5BC20}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{31EC01EA-4A1A-4D93-BD21-D94AF3D5BC20}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1A3BD7A6-0D96-4B05-8A9F-000FF44A25D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1A3BD7A6-0D96-4B05-8A9F-000FF44A25D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1A3BD7A6-0D96-4B05-8A9F-000FF44A25D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1A3BD7A6-0D96-4B05-8A9F-000FF44A25D8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
