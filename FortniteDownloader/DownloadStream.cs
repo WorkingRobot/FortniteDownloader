@@ -97,7 +97,7 @@ namespace FortniteDownloader
                     Position = offset + position;
                     break;
                 case SeekOrigin.End:
-                    Position = Length - offset;
+                    Position = Length + offset;
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();

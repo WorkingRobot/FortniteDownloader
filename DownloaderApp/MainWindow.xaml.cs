@@ -1,7 +1,4 @@
-﻿using FortniteDownloader;
-using FortniteDownloader.Net;
-using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -9,19 +6,20 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using FortniteDownloader;
+using FortniteDownloader.Net;
+using Newtonsoft.Json;
 
 namespace DownloaderApp
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public sealed partial class MainWindow : Window, IDisposable
     {
-        ObservableCollection<CheckboxItem> FileList = new ObservableCollection<CheckboxItem>();
-
-        Client Client = new Client();
-        Authorization Auth;
-        IDownloader FileDownloader;
+        private readonly ObservableCollection<CheckboxItem> FileList = new ObservableCollection<CheckboxItem>();
+        private readonly Client Client = new Client();
+        private IDownloader FileDownloader;
 
         public MainWindow()
         {
@@ -32,19 +30,8 @@ namespace DownloaderApp
             FileListBox.ItemsSource = FileList;
         }
 
-        void Log(string text) =>
+        private void Log(string text) =>
             Dispatcher.InvokeAsync(() => LogBox.AppendText(text + "\n"));
-
-        // For those looking at my code, please don't use void for an async method. WPF events don't allow a Task as a return type
-        private void LoginClick(object sender, RoutedEventArgs e)
-        {
-            var l = new Login();
-            l.ShowDialog();
-            if (l.Auth != null)
-            {
-                Auth = l.Auth;
-            }
-        }
 
         private async void GetManifestClick(object sender, RoutedEventArgs e)
         {
@@ -56,14 +43,7 @@ namespace DownloaderApp
             }
             else if (RadioLogin.IsChecked ?? false)
             {
-                if (Auth == null)
-                {
-                    MessageBox.Show(this, "You haven't logged in yet!", "DownloaderApp", MessageBoxButton.OK);
-                    ManifestBtn.IsEnabled = true;
-                    return;
-                }
-                await Auth.RefreshIfInvalid().ConfigureAwait(false);
-                FileDownloader = new AuthedDownloader(Auth);
+                FileDownloader = new AuthedDownloader();
             }
             else if (RadioCustom.IsChecked ?? false)
             {
@@ -105,8 +85,8 @@ namespace DownloaderApp
 
         private async void StartDownloadBtn(object sender, RoutedEventArgs e)
         {
-            List<string> selectedFiles = new List<string>();
-            foreach(var file in FileList)
+            var selectedFiles = new List<string>();
+            foreach (var file in FileList)
             {
                 if (file.Checked)
                 {
@@ -119,7 +99,7 @@ namespace DownloaderApp
                 return;
             }
             var manifest = await FileDownloader.GetDownloadManifest().ConfigureAwait(false);
-            long downloadSize = selectedFiles.Sum(f => manifest.FileManifests[f].Sum(chunk => (long)chunk.Size));
+            var downloadSize = selectedFiles.Sum(f => manifest.FileManifests[f].Sum(chunk => (long)chunk.Size));
             if (Dispatcher.Invoke(() => MessageBox.Show(this, $"The total download size is {GetReadableSize(downloadSize)}. Continue?", "DownloaderApp", MessageBoxButton.YesNo) != MessageBoxResult.Yes))
                 return;
             Dispatcher.Invoke(() =>
@@ -136,19 +116,19 @@ namespace DownloaderApp
             }));
         }
 
-        Task DownloadAsync(string[] files, long downloadSize, Manifest manifest)
+        private Task DownloadAsync(string[] files, long downloadSize, Manifest manifest)
         {
-            Task[] tasks = new Task[files.Length];
+            var tasks = new Task[files.Length];
             Log($"Downloading {files.Length} files (Size: {GetReadableSize(downloadSize)})");
-            for (int i = 0; i < files.Length; i++)
+            for (var i = 0; i < files.Length; i++)
             {
-                string file = files[i];
+                var file = files[i];
                 tasks[i] = DownloadAsync(file, manifest, n => Dispatcher.InvokeAsync(() => ProgBar.Value += (double)n / downloadSize));
             }
             return Task.WhenAll(tasks);
         }
 
-        async Task DownloadAsync(string file, Manifest manifest, Action<int> progress)
+        private async Task DownloadAsync(string file, Manifest manifest, Action<int> progress)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(file));
             using (var downloadStream = new DownloadStream(file, manifest, false, Client))
@@ -156,10 +136,10 @@ namespace DownloaderApp
             using (var semaphore = new SemaphoreSlim(20))
             {
                 Log($"Downloading {file} in {downloadStream.ChunkCount} chunks (Size: {GetReadableSize(downloadStream.Length)})");
-                Task[] tasks = new Task[downloadStream.ChunkCount];
-                
-                int writeChunkInd = 0;
-                for (int i = 0; i < downloadStream.ChunkCount; i++)
+                var tasks = new Task[downloadStream.ChunkCount];
+
+                var writeChunkInd = 0;
+                for (var i = 0; i < downloadStream.ChunkCount; i++)
                 {
                     await semaphore.WaitAsync().ConfigureAwait(false);
                     tasks[i] = downloadStream.GetChunk(i).ContinueWith(async (t, nObj) =>
@@ -180,9 +160,9 @@ namespace DownloaderApp
             Log($"Downloaded {file}");
         }
 
-        static string GetReadableSize(long size)
+        private static string GetReadableSize(long size)
         {
-            long absolute_i = size < 0 ? -size : size;
+            var absolute_i = size < 0 ? -size : size;
             string suffix;
             double readable;
             if (absolute_i >= 0x40000000)
@@ -204,19 +184,25 @@ namespace DownloaderApp
             {
                 return size.ToString("0 B");
             }
-            readable = readable / 1024;
+            readable /= 1024;
             return readable.ToString("0.## ") + suffix;
         }
 
-        class CheckboxItem
+        private bool disposed;
+        public void Dispose()
+        {
+            if (disposed) return;
+            FileDownloader.Dispose();
+            Client.Dispose();
+            disposed = true;
+        }
+
+        private class CheckboxItem
         {
             public string Key { get; set; }
             public bool Checked { get; set; }
 
-            public CheckboxItem(string key)
-            {
-                Key = key;
-            }
+            public CheckboxItem(string key) => Key = key;
         }
     }
 }

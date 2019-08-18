@@ -1,9 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>latest</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <Authors>WorkingRobot</Authors>
     <PackageLicense>MIT</PackageLicense>
     <PackageProjectUrl>https://github.com/WorkingRobot/FortniteDownloader</PackageProjectUrl>
@@ -12,9 +12,10 @@
     <Copyright>Copyright © WorkingRobot 2019</Copyright>
     <Description>Download Fortnite's files without the Epic Games launcher.</Description>
     <PackageTags>unreal engine pak fortnite download</PackageTags>
-    <AssemblyVersion>1.1.0.0</AssemblyVersion>
-    <PackageReleaseNotes>Breaking changes that add a new authorized downloader and a normal downloader</PackageReleaseNotes>
+    <AssemblyVersion>1.2.0.0</AssemblyVersion>
+    <PackageReleaseNotes>Username and password is no longer required to get the latest manifest</PackageReleaseNotes>
     <PackageLicenseUrl></PackageLicenseUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="DotNetZip" Version="1.13.3" />

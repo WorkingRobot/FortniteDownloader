@@ -2,88 +2,38 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading.Tasks;
-using System.Web;
 
 namespace FortniteDownloader
 {
     public class Authorization : IDisposable
     {
-        private readonly string Username;
-        private readonly string Password;
-
         public string AccessToken { get; private set; }
-        public string RefreshToken { get; private set; }
 
-        public DateTimeOffset AccessExpiration { get; private set; }
-        public DateTimeOffset RefreshExpiration { get; private set; }
+        public DateTimeOffset Expiration { get; private set; }
 
         private readonly Client Client = new Client();
 
-        const string LAUNCHER_LOGIN_INIT_URL = "https://launcher-website-prod07.ol.epicgames.com/epic-login";
-        const string LAUNCHER_LOGIN_URL = "https://accounts.launcher-website-prod07.ol.epicgames.com/login/doLauncherLogin";
         const string OAUTH_TOKEN_URL = "https://account-public-service-prod03.ol.epicgames.com/account/api/oauth/token";
-        // No game client tokens here, just the launcher :)
-        const string LAUNCHER_AUTH_HEADER = "basic MzRhMDJjZjhmNDQxNGUyOWIxNTkyMTg3NmRhMzZmOWE6ZGFhZmJjY2M3Mzc3NDUwMzlkZmZlNTNkOTRmYzc2Y2Y=";
+        readonly string LAUNCHER_AUTH_HEADER = $"basic {GenerateHeader("34a02cf8f4414e29b15921876da36f9a", "daafbccc737745039dffe53d94fc76cf")}";
 
-        public Authorization(string user, string pass)
-        {
-            Username = user;
-            Password = pass;
-        }
+        public Authorization() { }
 
-        public Authorization(string username, string password, string accessToken, string refreshToken, DateTimeOffset accessExpiration, DateTimeOffset refreshExpiration)
+        public Authorization(string accessToken, DateTimeOffset accessExpiration)
         {
-            Username = username;
-            Password = password;
             AccessToken = accessToken;
-            RefreshToken = refreshToken;
-            AccessExpiration = accessExpiration;
-            RefreshExpiration = refreshExpiration;
+            Expiration = accessExpiration;
         }
 
         public async Task Login()
         {
-            var resp = await Client.SendAsync("GET", LAUNCHER_LOGIN_INIT_URL).ConfigureAwait(false);
-            var launcherInfo = JsonConvert.DeserializeObject<LauncherParams>((await resp.GetStringAsync()).Split(".__setAuthorizeRedirParams(", 2)[1].Split(");", 2)[0]);
-
-            resp = await Client.SendAsync("GET", $"{LAUNCHER_LOGIN_URL}?client_id={launcherInfo.client_id}&redirectUrl={HttpUtility.UrlEncode(launcherInfo.redirectUrl)}", true).ConfigureAwait(false);
-
-            Client.SetHeader("X-XSRF-TOKEN", Client.Cookies.GetCookies(new Uri(LAUNCHER_LOGIN_URL))["XSRF-TOKEN"].Value);
-
-            resp = await Client.SendFormAsync("POST", LAUNCHER_LOGIN_URL, new Dictionary<string, string>
-            {
-                { "fromForm", "yes" },
-                { "authType", "" },
-                { "linkExtAuth", "" },
-                { "client_id", launcherInfo.client_id },
-                { "redirectUrl", launcherInfo.redirectUrl },
-                { "epic_username", Username },
-                { "password", Password }
-            }).ConfigureAwait(false);
-            Client.SetHeader("X-XSRF-TOKEN", null);
-            var loginError = (await resp.GetStringAsync().ConfigureAwait(false)).Split("<div class=\"errorCodes", 2);
-            if (loginError.Length == 2)
-            {
-                throw new ArgumentException(loginError[1].Split("<span>", 2)[1].Split("</span>", 2)[0]);
-            }
-
-            resp = await Client.SendAsync("GET", launcherInfo.redirectUrl).ConfigureAwait(false);
-            string exchangeCode = (await resp.GetStringAsync().ConfigureAwait(false)).Split("loginWithExchangeCode('", 2)[1].Split("',", 2)[0];
-
             Client.SetHeader("Authorization", LAUNCHER_AUTH_HEADER);
-            resp = await Client.SendFormAsync("POST", OAUTH_TOKEN_URL, new Dictionary<string, string>
+            (AccessToken, Expiration) = JsonConvert.DeserializeObject<TokenResponse>(await (await Client.SendFormAsync("POST", OAUTH_TOKEN_URL, new Dictionary<string, string>
             {
-                { "grant_type", "exchange_code" },
+                { "grant_type", "client_credentials" },
                 { "token_type", "eg1" },
-                { "exchange_code", exchangeCode }
-            }).ConfigureAwait(false);
-            var tokens = JsonConvert.DeserializeObject<ExchangeResponse>(await resp.GetStringAsync().ConfigureAwait(false));
-
-            AccessToken = tokens.access_token;
-            RefreshToken = tokens.refresh_token;
-            AccessExpiration = tokens.expires_at;
-            RefreshExpiration = tokens.refresh_expires_at;
+            }).ConfigureAwait(false)).GetStringAsync().ConfigureAwait(false));
             Client.SetHeader("Authorization", "bearer " + AccessToken);
         }
 
@@ -95,28 +45,9 @@ namespace FortniteDownloader
 
         public async Task<bool> RefreshIfInvalid()
         {
-            if (AccessExpiration < DateTimeOffset.UtcNow)
+            if (Expiration < DateTimeOffset.UtcNow)
             {
-                if (RefreshExpiration < DateTimeOffset.UtcNow)
-                {
-                    await Login().ConfigureAwait(false);
-                    return true;
-                }
-                
-                Client.SetHeader("Authorization", LAUNCHER_AUTH_HEADER);
-                var resp = await Client.SendFormAsync("POST", OAUTH_TOKEN_URL, new Dictionary<string, string>
-                {
-                    { "grant_type", "refresh_token" },
-                    { "token_type", "eg1" },
-                    { "refresh_token", RefreshToken }
-                }).ConfigureAwait(false);
-                var tokens = JsonConvert.DeserializeObject<ExchangeResponse>(await resp.GetStringAsync().ConfigureAwait(false));
-
-                AccessToken = tokens.access_token;
-                RefreshToken = tokens.refresh_token;
-                AccessExpiration = tokens.expires_at;
-                RefreshExpiration = tokens.refresh_expires_at;
-                Client.SetHeader("Authorization", "bearer " + AccessToken);
+                await Login().ConfigureAwait(false);
                 return true;
             }
             return false;
@@ -130,19 +61,19 @@ namespace FortniteDownloader
             disposed = true;
         }
 
-#pragma warning disable CS0649
-        struct LauncherParams
-        {
-            public string client_id;
-            public string redirectUrl;
-        }
+        static string GenerateHeader(string id, string secret) => Convert.ToBase64String(Encoding.UTF8.GetBytes($"{id}:{secret}"));
 
-        struct ExchangeResponse
+#pragma warning disable CS0649
+        struct TokenResponse
         {
             public string access_token;
             public DateTimeOffset expires_at;
-            public string refresh_token;
-            public DateTimeOffset refresh_expires_at;
+
+            public void Deconstruct(out string AccessToken, out DateTimeOffset AccessExpiration)
+            {
+                AccessToken = access_token;
+                AccessExpiration = expires_at;
+            }
         }
 #pragma warning restore CS0649
     }
@@ -150,9 +81,7 @@ namespace FortniteDownloader
     // I hate myself for doing this, but .Net Standard doesn't support it
     static class Extensions
     {
-        internal static string[] Split(this string me, string spliterator, int count = int.MaxValue)
-        {
-            return me.Split(new string[] { spliterator }, count, StringSplitOptions.None);
-        }
+        internal static string[] Split(this string me, string spliterator, int count = int.MaxValue) =>
+            me.Split(new string[] { spliterator }, count, StringSplitOptions.None);
     }
 }

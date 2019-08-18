@@ -19,8 +19,8 @@
 
         <TextBlock Margin="-20,26,0,0" TextWrapping="Wrap" Text="OR" VerticalAlignment="Top" FontSize="14" TextAlignment="Center" HorizontalAlignment="Left" Width="40" Grid.Column="1" Grid.ColumnSpan="2"/>
 
-        <RadioButton x:Name="RadioLogin" GroupName="ManifestMethod" Margin="30,10,30,0" VerticalAlignment="Top" Grid.Column="1" Height="46"/>
-        <Button Margin="30,34,30,0" VerticalAlignment="Top" Height="22" Content="Login with Epic Games" FontSize="14" Grid.Column="1" Click="LoginClick"/>
+        <TextBlock Margin="30,10,30,0" VerticalAlignment="Top" Text="Get Latest Version" Height="22" FontSize="14" Grid.Column="1" TextAlignment="Center"/>
+        <RadioButton x:Name="RadioLogin" GroupName="ManifestMethod" Margin="30,12,30,0" VerticalAlignment="Top" Grid.Column="1" Height="44"/>
 
         <TextBlock Margin="-20,26,0,0" TextWrapping="Wrap" Text="OR" VerticalAlignment="Top" FontSize="14" TextAlignment="Center" HorizontalAlignment="Left" Width="40" Grid.Column="2" Grid.ColumnSpan="2"/>
 

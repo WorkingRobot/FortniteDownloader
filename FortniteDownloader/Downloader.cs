@@ -8,7 +8,7 @@ namespace FortniteDownloader
     {
         readonly string ManifestId;
         readonly Client Client;
-        
+
         internal const string DOWNLOAD_BASE_URL = "http://epicgames-download1.akamaized.net/Builds/Fortnite/CloudDir/";
 
         public Downloader(string manifestId, Client client = null)
@@ -25,7 +25,7 @@ namespace FortniteDownloader
             (downloadManifest = new Manifest(JsonConvert.DeserializeObject<WebManifest>(
                 await (await Client.SendAsync("GET", ManifestUrl).ConfigureAwait(false)).GetStringAsync().ConfigureAwait(false)
             )));
-        
+
         public async Task<DownloadStream> OpenFile(string file, bool cachePreviousChunks = false) =>
             new DownloadStream(file, await GetDownloadManifest().ConfigureAwait(false), cachePreviousChunks, Client);
 
