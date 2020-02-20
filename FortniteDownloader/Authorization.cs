@@ -1,13 +1,15 @@
-﻿using FortniteDownloader.Net;
-using Newtonsoft.Json;
+﻿using fnbot.shop.Web;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
+using JName = System.Text.Json.Serialization.JsonPropertyNameAttribute;
 
 namespace FortniteDownloader
 {
-    public class Authorization : IDisposable
+    public sealed class Authorization : IDisposable
     {
         public string AccessToken { get; private set; }
 
@@ -29,11 +31,11 @@ namespace FortniteDownloader
         public async Task Login()
         {
             Client.SetHeader("Authorization", LAUNCHER_AUTH_HEADER);
-            (AccessToken, Expiration) = JsonConvert.DeserializeObject<TokenResponse>(await (await Client.SendFormAsync("POST", OAUTH_TOKEN_URL, new Dictionary<string, string>
+            (AccessToken, Expiration) = await JsonSerializer.DeserializeAsync<TokenResponse>((await Client.SendFormAsync("POST", OAUTH_TOKEN_URL, new Dictionary<string, string>
             {
                 { "grant_type", "client_credentials" },
                 { "token_type", "eg1" },
-            }).ConfigureAwait(false)).GetStringAsync().ConfigureAwait(false));
+            }).ConfigureAwait(false)).Stream);
             Client.SetHeader("Authorization", "bearer " + AccessToken);
         }
 
@@ -41,6 +43,12 @@ namespace FortniteDownloader
         {
             if (!skipAuthChecking) await RefreshIfInvalid().ConfigureAwait(false);
             return await (await Client.SendAsync("GET", uri).ConfigureAwait(false)).GetStringAsync().ConfigureAwait(false);
+        }
+        public async Task<Stream> SendRequestAsync(string uri, bool skipAuthChecking = false)
+        {
+            if (!skipAuthChecking)
+                await RefreshIfInvalid().ConfigureAwait(false);
+            return (await Client.SendAsync("GET", uri).ConfigureAwait(false)).Stream;
         }
 
         public async Task<bool> RefreshIfInvalid()
@@ -64,24 +72,19 @@ namespace FortniteDownloader
         static string GenerateHeader(string id, string secret) => Convert.ToBase64String(Encoding.UTF8.GetBytes($"{id}:{secret}"));
 
 #pragma warning disable CS0649
-        struct TokenResponse
+        class TokenResponse
         {
-            public string access_token;
-            public DateTimeOffset expires_at;
+            [JName("access_token")]
+            public string AccessToken { get; set; }
+            [JName("expires_at")]
+            public DateTimeOffset ExpiresAt { get; set; }
 
             public void Deconstruct(out string AccessToken, out DateTimeOffset AccessExpiration)
             {
-                AccessToken = access_token;
-                AccessExpiration = expires_at;
+                AccessToken = this.AccessToken;
+                AccessExpiration = ExpiresAt;
             }
         }
 #pragma warning restore CS0649
-    }
-
-    // I hate myself for doing this, but .Net Standard doesn't support it
-    static class Extensions
-    {
-        internal static string[] Split(this string me, string spliterator, int count = int.MaxValue) =>
-            me.Split(new string[] { spliterator }, count, StringSplitOptions.None);
     }
 }

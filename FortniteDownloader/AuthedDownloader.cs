@@ -1,10 +1,10 @@
-﻿using FortniteDownloader.Net;
-using Newtonsoft.Json;
+﻿using fnbot.shop.Web;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace FortniteDownloader
 {
-    public class AuthedDownloader : IDownloader
+    public sealed class AuthedDownloader : IDownloader
     {
         readonly Authorization Auth;
         readonly Client Client;
@@ -28,15 +28,15 @@ namespace FortniteDownloader
         private Element appManifest;
         public async Task<Element> GetAppManifest(bool forceUpdate = false) =>
             appManifest != null && !forceUpdate ? appManifest :
-                (appManifest = JsonConvert.DeserializeObject<ElementList>(
-                await Auth.SendRequest(APP_MANIFEST_URL).ConfigureAwait(false)
-                ).elements[0]);
+                (appManifest = (await JsonSerializer.DeserializeAsync<ElementList>(
+                await Auth.SendRequestAsync(APP_MANIFEST_URL).ConfigureAwait(false)
+                )).elements[0]);
 
         private Manifest downloadManifest;
         public async Task<Manifest> GetDownloadManifest(bool forceUpdate = false) => 
             downloadManifest != null && !forceUpdate ? downloadManifest :
-                (downloadManifest = new Manifest(JsonConvert.DeserializeObject<WebManifest>(
-                await (await Client.SendAsync("GET", (await GetAppManifest(forceUpdate).ConfigureAwait(false)).manifests[0].BuiltUrl).ConfigureAwait(false)).GetStringAsync().ConfigureAwait(false)
+                (downloadManifest = new Manifest(await JsonSerializer.DeserializeAsync<WebManifest>(
+                (await Client.SendAsync("GET", (await GetAppManifest(forceUpdate).ConfigureAwait(false)).manifests[0].BuiltUrl).ConfigureAwait(false)).Stream
                 )));
 
         public async Task<DownloadStream> OpenFile(string file, bool cachePreviousChunks = false) =>

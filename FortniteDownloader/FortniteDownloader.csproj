@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <LangVersion>latest</LangVersion>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.2.0</Version>
+    <Version>1.5.0</Version>
     <Authors>WorkingRobot</Authors>
     <PackageLicense>MIT</PackageLicense>
     <PackageProjectUrl>https://github.com/WorkingRobot/FortniteDownloader</PackageProjectUrl>
@@ -12,13 +12,14 @@
     <Copyright>Copyright © WorkingRobot 2019</Copyright>
     <Description>Download Fortnite's files without the Epic Games launcher.</Description>
     <PackageTags>unreal engine pak fortnite download</PackageTags>
-    <AssemblyVersion>1.2.0.0</AssemblyVersion>
-    <PackageReleaseNotes>Username and password is no longer required to get the latest manifest</PackageReleaseNotes>
+    <AssemblyVersion>1.5.0.0</AssemblyVersion>
+    <PackageReleaseNotes></PackageReleaseNotes>
     <PackageLicenseUrl></PackageLicenseUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="DotNetZip" Version="1.13.3" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
+    <PackageReference Include="DotNetZip" Version="1.13.5" />
+    <PackageReference Include="fnbot.shop.Web" Version="1.0.0" />
+    <PackageReference Include="System.Text.Json" Version="4.7.1" />
   </ItemGroup>
 </Project>

@@ -9,29 +9,29 @@ namespace FortniteDownloader
     // App Manifest
     struct ElementList
     {
-        public Element[] elements;
+        public Element[] elements { get; set; }
     }
 
     public sealed class Element
     {
-        public string appName;
-        public string labelName;
-        public string buildVersion;
-        public string hash;
-        public ManifestInfo[] manifests;
+        public string appName { get; set; }
+        public string labelName { get; set; }
+        public string buildVersion { get; set; }
+        public string hash { get; set; }
+        public ManifestInfo[] manifests { get; set; }
     }
 
     public struct ManifestInfo
     {
-        public string uri;
-        public QueryParam[] queryParams;
+        public string uri { get; set; }
+        public QueryParam[] queryParams { get; set; }
 
         public string BuiltUrl
         {
             get
             {
                 if (queryParams == null) return uri;
-                StringBuilder builder = new StringBuilder(uri);
+                var builder = new StringBuilder(uri);
                 builder.Append('?');
                 foreach (var p in queryParams)
                 {
@@ -44,38 +44,38 @@ namespace FortniteDownloader
 
     public struct QueryParam
     {
-        public string name;
-        public string value;
+        public string name { get; set; }
+        public string value { get; set; }
     }
 
     // Download Manifest
     sealed class WebManifest
     {
-        public string ManifestFileVersion; // might be useful later, but eh
-        public string AppNameString;
-        public string BuildVersionString;
-        public string LaunchExeString;
-        public WebFileManifest[] FileManifestList;
+        public string ManifestFileVersion { get; set; } // might be useful later, but eh
+        public string AppNameString { get; set; }
+        public string BuildVersionString { get; set; }
+        public string LaunchExeString { get; set; }
+        public WebFileManifest[] FileManifestList { get; set; }
 
-        public Dictionary<string, string> ChunkHashList;
+        public Dictionary<string, string> ChunkHashList { get; set; }
         // public Dictionary<string, string> ChunkShaList; Not used atm, speed up and decrease memory usage
-        public Dictionary<string, string> DataGroupList;
+        public Dictionary<string, string> DataGroupList { get; set; }
         // public Dictionary<string, string> ChunkFilesizeList; Not used atm, speed up and decrease memory usage
     }
 
     sealed class WebFileManifest
     {
-        public string Filename;
-        public string FileHash;
-        public WebFileChunk[] FileChunkParts;
-        public string[] InstallTags;
+        public string Filename { get; set; }
+        public string FileHash { get; set; }
+        public WebFileChunk[] FileChunkParts { get; set; }
+        public string[] InstallTags { get; set; }
     }
 
     struct WebFileChunk
     {
-        public string Guid;
-        public string Offset;
-        public string Size;
+        public string Guid { get; set; }
+        public string Offset { get; set; }
+        public string Size { get; set; }
     }
 #pragma warning restore CS0649
 
@@ -86,7 +86,7 @@ namespace FortniteDownloader
 
         internal Manifest(WebManifest webm)
         {
-            SortedDictionary<string, FileChunk> chunks = new SortedDictionary<string, FileChunk>();
+            var chunks = new SortedDictionary<string, FileChunk>();
             foreach (var kv in webm.ChunkHashList)
             {
                 chunks[kv.Key] = new FileChunk
@@ -146,17 +146,17 @@ namespace FortniteDownloader
 
     public class FileChunkPart
     {
-        public FileChunk Chunk;
-        public int Offset;
-        public int Size;
+        public FileChunk Chunk { get; set; }
+        public int Offset { get; set; }
+        public int Size { get; set; }
     }
 
     public class FileChunk
     {
-        public string Guid;
-        public string Hash;
-        public string DataGroup;
-        
+        public string Guid { get; set; }
+        public string Hash { get; set; }
+        public string DataGroup { get; set; }
+
         const string CHUNK_BASE_URL = Downloader.DOWNLOAD_BASE_URL + "ChunksV3/";
         public string Url => $"{CHUNK_BASE_URL}{DataGroup}/{Hash}_{Guid}.chunk";
     }

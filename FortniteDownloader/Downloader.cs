@@ -1,10 +1,10 @@
-﻿using FortniteDownloader.Net;
-using Newtonsoft.Json;
+﻿using fnbot.shop.Web;
+using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace FortniteDownloader
 {
-    public partial class Downloader : IDownloader
+    public sealed class Downloader : IDownloader
     {
         readonly string ManifestId;
         readonly Client Client;
@@ -22,8 +22,8 @@ namespace FortniteDownloader
         private Manifest downloadManifest;
         public async Task<Manifest> GetDownloadManifest(bool forceUpdate = false) =>
             downloadManifest != null && !forceUpdate ? downloadManifest :
-            (downloadManifest = new Manifest(JsonConvert.DeserializeObject<WebManifest>(
-                await (await Client.SendAsync("GET", ManifestUrl).ConfigureAwait(false)).GetStringAsync().ConfigureAwait(false)
+            (downloadManifest = new Manifest(await JsonSerializer.DeserializeAsync<WebManifest>(
+                (await Client.SendAsync("GET", ManifestUrl).ConfigureAwait(false)).Stream
             )));
 
         public async Task<DownloadStream> OpenFile(string file, bool cachePreviousChunks = false) =>

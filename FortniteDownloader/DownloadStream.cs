@@ -1,6 +1,7 @@
-﻿using FortniteDownloader.Net;
+﻿using fnbot.shop.Web;
 using Ionic.Zlib;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -55,6 +56,42 @@ namespace FortniteDownloader
 
         public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
 
+        public Task Prefetch(long offset, long count, int concurrentDownloads = 10)
+        {
+            if (!CacheChunks)
+                throw new InvalidOperationException($"{nameof(CacheChunks)} must be true to prefetch chunks");
+            var (i, startPos) = GetChunkIndex(offset);
+            if (i == -1)
+                return Task.CompletedTask; // throw maybe?
+
+            var tasks = new List<Task>();
+            var sem = new SemaphoreSlim(concurrentDownloads);
+            while (count > 0)
+            {
+                tasks.Add(Prefetch(i));
+                if (++i == Chunks.Length) break;
+                count -= Chunks[i].Size - startPos;
+                if (startPos != 0) startPos = 0;
+            }
+            return Task.WhenAll(tasks).ContinueWith(t => sem.Dispose());
+
+            async Task Prefetch(int i)
+            {
+                await sem.WaitAsync();
+                await GetChunk(i);
+                sem.Release();
+            }
+        }
+
+        public void ClearCache()
+        {
+            if (!CacheChunks)
+                throw new InvalidOperationException($"{nameof(CacheChunks)} must be true to clear cache");
+            for (int i = 0; i < DownloadedChunks.Length; i++)
+            {
+                DownloadedChunks[i] = null;
+            }
+        }
 
         public override int Read(byte[] buffer, int offset, int count) =>
             ReadAsync(buffer, offset, count, CancellationToken.None).GetAwaiter().GetResult();
@@ -70,6 +107,7 @@ namespace FortniteDownloader
                 chunkBuffer = await GetChunk(i).ConfigureAwait(false);
                 if (count - bytesRead > chunkBuffer.Length - startPos)
                 {
+                    // TODO: use Unsafe.CopyBlock
                     Buffer.BlockCopy(chunkBuffer, startPos, buffer, offset + bytesRead, chunkBuffer.Length - startPos);
                     bytesRead += chunkBuffer.Length - startPos;
                 }
@@ -123,40 +161,37 @@ namespace FortniteDownloader
                 return DownloadedChunks[i];
             if (i == ChunkID)
                 return ChunkBuffer;
+            using var chunkStream = (await Client.SendAsync("GET", Chunks[i].Chunk.Url).ConfigureAwait(false)).Stream;
 
-            using (var chunkStream = (await Client.SendAsync("GET", Chunks[i].Chunk.Url).ConfigureAwait(false)).Stream)
+            // maybe clean this up, even if it's pretty optimized
+            chunkStream.Position = 8;
+            var headerSize = chunkStream.ReadByte();
+            chunkStream.Position = 40;
+            var compressed = chunkStream.ReadByte() == 1;
+
+            chunkStream.Position = headerSize;
+            byte[] buffer = new byte[Chunks[i].Size];
+            if (!compressed)
             {
-                // maybe clean this up, even if it's pretty optimized
-                chunkStream.Position = 8;
-                var headerSize = chunkStream.ReadByte();
-                chunkStream.Position = 40;
-                var compressed = chunkStream.ReadByte() == 1;
-
-                chunkStream.Position = headerSize;
-                byte[] buffer = new byte[Chunks[i].Size];
-                if (!compressed)
-                {
-                    chunkStream.Position += Chunks[i].Offset;
-                    await chunkStream.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
-                }
-                else
-                {
-                    using (var decompressionStream = new ZlibStream(chunkStream, CompressionMode.Decompress))
-                    {
-                        // no way to seek to a position, might use a different library for this
-                        var offsetBuffer = new byte[Chunks[i].Offset];
-                        await decompressionStream.ReadAsync(offsetBuffer, 0, offsetBuffer.Length).ConfigureAwait(false);
-
-                        await decompressionStream.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
-                    }
-                }
-                if (CacheChunks)
-                {
-                    return DownloadedChunks[i] = buffer;
-                }
-                ChunkID = i;
-                return ChunkBuffer = buffer;
+                chunkStream.Position += Chunks[i].Offset;
+                await chunkStream.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
             }
+            else
+            {
+                using var decompressionStream = new ZlibStream(chunkStream, CompressionMode.Decompress);
+
+                // no way to seek to a position, might use a different library for this
+                var offsetBuffer = new byte[Chunks[i].Offset];
+                await decompressionStream.ReadAsync(offsetBuffer, 0, offsetBuffer.Length).ConfigureAwait(false);
+
+                await decompressionStream.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+            }
+            if (CacheChunks)
+            {
+                return DownloadedChunks[i] = buffer;
+            }
+            ChunkID = i;
+            return ChunkBuffer = buffer;
         }
     }
 }
