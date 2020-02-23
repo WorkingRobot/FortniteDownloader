@@ -11,10 +11,10 @@ namespace FortniteDownloader
 
         internal const string DOWNLOAD_BASE_URL = "http://epicgames-download1.akamaized.net/Builds/Fortnite/CloudDir/";
 
-        public Downloader(string manifestId, Client client = null)
+        public Downloader(string manifestId, string cachePath = null)
         {
             ManifestId = manifestId;
-            Client = client ?? new Client();
+            Client = cachePath == null ? new Client() : new CachedDownloadClient(cachePath);
         }
 
         public string ManifestUrl => $"{DOWNLOAD_BASE_URL}{ManifestId}.manifest";

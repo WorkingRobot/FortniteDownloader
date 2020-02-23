@@ -11,16 +11,16 @@ namespace FortniteDownloader
 
         const string APP_MANIFEST_URL = "https://launcher-public-service-prod06.ol.epicgames.com/launcher/api/public/assets/v2/platform/Windows/namespace/fn/catalogItem/4fe75bbc5a674f4f9b356b5c90567da5/app/Fortnite/label/Live";
 
-        public AuthedDownloader()
+        public AuthedDownloader(string cachePath = null)
         {
             Auth = new Authorization();
-            Client = new Client();
+            Client = cachePath == null ? new Client() : new CachedDownloadClient(cachePath);
         }
 
-        public AuthedDownloader(Authorization auth)
+        public AuthedDownloader(Authorization auth, string cachePath = null)
         {
             Auth = auth;
-            Client = new Client();
+            Client = cachePath == null ? new Client() : new CachedDownloadClient(cachePath);
         }
 
         public string ManifestUrl => GetAppManifest().GetAwaiter().GetResult().manifests[0].BuiltUrl;
